@@ -2,15 +2,18 @@
 
 require('dotenv').config();
 
-const fs                               = require('fs');
+const fs   = require('fs');
+const http = require('http');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const QRCode                           = require('qrcode');
-const { execSync }                     = require('child_process');
-const path                             = require('path');
-const OpenAI                           = require('openai');
-const { buildSystemPrompt }            = require('./knowledge_base');
+const QRCode  = require('qrcode');
+const qrcodeTerminal = require('qrcode-terminal');
+const { execSync } = require('child_process');
+const path    = require('path');
+const OpenAI  = require('openai');
+const { buildSystemPrompt } = require('./knowledge_base');
 const { transcribeVoiceNote, textToVoiceNote } = require('./voice_handler');
-const { searchWeb }                    = require('./web_search');
+const { searchWeb } = require('./web_search');
+const store   = require('./store');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VALIDATION
@@ -26,10 +29,9 @@ if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_a
 // OPENAI CLIENT & CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-const openai           = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const SYSTEM_PROMPT    = buildSystemPrompt();
-const MODEL            = 'gpt-4o-mini';
-const MAX_HISTORY_PAIRS = 8; // last 8 user+assistant turns = 16 messages
+const openai        = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const SYSTEM_PROMPT = buildSystemPrompt();
+const MODEL         = 'gpt-4o-mini';
 
 const FALLBACK_MSG =
   '🙏 So sorry, I ran into a small hiccup! Please try again in a moment, or contact the family directly for urgent queries. 😊';
@@ -38,21 +40,42 @@ const FALLBACK_MSG =
 let botReadyAt = null;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONVERSATION MEMORY  (in-memory, per user, rolling window)
+// ADMIN CONFIG
+//
+// Set ADMIN_NUMBER in .env as your WhatsApp number in international format,
+// no '+' or spaces.  Example: ADMIN_NUMBER=919876543210
+// The bot appends '@c.us' automatically.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const conversationStore = new Map(); // Map<phoneNumber, Message[]>
+const ADMIN_RAW    = (process.env.ADMIN_NUMBER || '').replace(/\D/g, '');
+const ADMIN_JID    = ADMIN_RAW ? `${ADMIN_RAW}@c.us` : null;
 
-function getHistory(userId) {
-  if (!conversationStore.has(userId)) conversationStore.set(userId, []);
-  return conversationStore.get(userId);
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// RATE LIMITER
+//
+// Prevents a single guest from spamming the bot (and racking up API costs).
+// Allows up to RATE_LIMIT messages per RATE_WINDOW_MS per phone number.
+// ─────────────────────────────────────────────────────────────────────────────
 
-function appendToHistory(userId, role, content) {
-  const history    = getHistory(userId);
-  const maxMsgs    = MAX_HISTORY_PAIRS * 2;
-  history.push({ role, content });
-  if (history.length > maxMsgs) history.splice(0, history.length - maxMsgs);
+const RATE_LIMIT     = 15;          // max messages per window
+const RATE_WINDOW_MS = 60_000;      // 1 minute
+const _rateBuckets   = new Map();   // userId → { count, windowStart }
+
+function isRateLimited(userId) {
+  const now   = Date.now();
+  const entry = _rateBuckets.get(userId) || { count: 0, windowStart: now };
+
+  if (now - entry.windowStart > RATE_WINDOW_MS) {
+    // Start a fresh window
+    _rateBuckets.set(userId, { count: 1, windowStart: now });
+    return false;
+  }
+
+  if (entry.count >= RATE_LIMIT) return true;
+
+  entry.count++;
+  _rateBuckets.set(userId, entry);
+  return false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,22 +84,15 @@ function appendToHistory(userId, role, content) {
 
 /**
  * Cleans up GPT output to ensure it renders correctly on WhatsApp.
- *
- * Problem: despite system-prompt instructions, gpt-4o-mini occasionally falls
- * back to Markdown conventions (**bold**, ## headers, ---) on long responses.
- * This is a server-side safety net that fixes every reply before sending.
- *
- * Rules enforced:
- *   **text**  →  *text*   (Markdown bold → WhatsApp bold)
- *   ## Header →  Header   (strip Markdown headers – they're invisible on WA)
- *   ---       →  ━━━━━    (replace hr with a WhatsApp-visible divider)
+ * Despite system-prompt instructions, gpt-4o-mini occasionally slips into
+ * Markdown on long responses. This is a server-side safety net.
  */
 function sanitizeForWhatsApp(text) {
   return text
-    .replace(/\*\*([^*\n]+)\*\*/g, '*$1*')   // **bold** → *bold*
-    .replace(/^#{1,6}\s+/gm,       '')        // ## Heading → Heading
-    .replace(/^-{3,}$/gm,          '━━━━━━') // --- → ━━━━━━
-    .replace(/^_{3,}$/gm,          '━━━━━━') // ___ → ━━━━━━
+    .replace(/\*\*([^*\n]+)\*\*/g, '*$1*')  // **bold** → *bold*
+    .replace(/^#{1,6}\s+/gm, '')             // ## Heading → Heading
+    .replace(/^-{3,}$/gm, '━━━━━━')          // --- → ━━━━━━
+    .replace(/^_{3,}$/gm, '━━━━━━')          // ___ → ━━━━━━
     .trim();
 }
 
@@ -84,14 +100,6 @@ function sanitizeForWhatsApp(text) {
 // OPENAI TOOL DEFINITION  (web_search)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Tool made available to gpt-4o-mini via OpenAI function calling.
- * The model decides on its own whether to call it based on the description.
- *
- * When to search  : hotel/venue phone numbers, Google Maps links, distances,
- *                   travel time, directions, any live factual info NOT in KB.
- * When NOT to search : anything already answered by the wedding knowledge base.
- */
 const TOOLS = [
   {
     type: 'function',
@@ -136,7 +144,6 @@ const TOOLS = [
   },
 ];
 
-// Whether web search is enabled (requires SERPER_API_KEY in .env)
 const SEARCH_ENABLED =
   !!process.env.SERPER_API_KEY &&
   process.env.SERPER_API_KEY !== 'your_serper_key_here';
@@ -145,35 +152,27 @@ const SEARCH_ENABLED =
 // OPENAI QUERY  (with function-calling loop)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Sends a message to gpt-4o-mini with the full system prompt + rolling history.
- * If the model decides to call `web_search`, we execute it and feed the results
- * back so the model can compose a final answer — all in one user-facing reply.
- *
- * Works for both text queries and voice-note transcriptions (same memory).
- */
 async function askOpenAI(userId, userMessage) {
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
-    ...getHistory(userId),
+    ...store.getHistory(userId),
     { role: 'user', content: userMessage },
   ];
 
-  // First API call — include tools only when search is configured
   let response = await openai.chat.completions.create({
-    model:       MODEL,
+    model: MODEL,
     messages,
-    tools:       SEARCH_ENABLED ? TOOLS : undefined,
-    tool_choice: SEARCH_ENABLED ? 'auto' : undefined,
+    tools:       SEARCH_ENABLED ? TOOLS     : undefined,
+    tool_choice: SEARCH_ENABLED ? 'auto'    : undefined,
     temperature: 0.5,
-    max_tokens:  700,   // +100 headroom for responses that include search data
+    max_tokens:  700,
   });
 
   let assistantMsg = response.choices[0].message;
 
-  // ── Tool-call loop (model may call web_search once or more) ─────────────────
+  // ── Tool-call loop ────────────────────────────────────────────────────────
   while (assistantMsg.tool_calls && assistantMsg.tool_calls.length > 0) {
-    messages.push(assistantMsg);  // add assistant's intent to the thread
+    messages.push(assistantMsg);
 
     for (const call of assistantMsg.tool_calls) {
       if (call.function.name === 'web_search') {
@@ -189,30 +188,17 @@ async function askOpenAI(userId, userMessage) {
           console.warn(`⚠️   [${userId}] Search failed: ${err.message}`);
         }
 
-        // Feed the result back as a tool message
-        messages.push({
-          role:         'tool',
-          tool_call_id: call.id,
-          content:      result,
-        });
+        messages.push({ role: 'tool', tool_call_id: call.id, content: result });
       }
     }
 
-    // Second API call — model now has search results and writes the final reply
-    response     = await openai.chat.completions.create({
-      model:       MODEL,
-      messages,
-      temperature: 0.5,
-      max_tokens:  700,
-    });
+    response     = await openai.chat.completions.create({ model: MODEL, messages, temperature: 0.5, max_tokens: 700 });
     assistantMsg = response.choices[0].message;
   }
 
-  // Sanitize formatting before saving to history and sending
   const reply = sanitizeForWhatsApp((assistantMsg.content || '').trim());
-
-  appendToHistory(userId, 'user',      userMessage);
-  appendToHistory(userId, 'assistant', reply);
+  store.appendToHistory(userId, 'user', userMessage);
+  store.appendToHistory(userId, 'assistant', reply);
   return reply;
 }
 
@@ -220,57 +206,162 @@ async function askOpenAI(userId, userMessage) {
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Fire-and-forget safe reply — never throws. */
 async function safeReply(message, text) {
-  try { await message.reply(text); } catch (_) {}
+  try { await message.reply(text); } catch (_) { }
+}
+
+async function safeReact(message, emoji) {
+  try { await message.react(emoji); } catch (_) { }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN COMMAND HANDLER
+//
+// Only the phone number set in ADMIN_NUMBER can trigger these commands.
+// Commands (send as a WhatsApp text message to the bot number):
+//
+//   /stats
+//       Returns total users, total messages, and the top 5 most active guests.
+//
+//   /broadcast <your message here>
+//       Sends your message to every guest who has ever messaged the bot.
+//       Use this for real-time updates: "Pheras starting now at Atlantiis! 🎊"
+//
+//   /reset <phone>
+//       Clears the conversation history for a specific guest phone number.
+//       Phone format: country code + number, e.g. 919876543210
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleAdminCommand(message, text) {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('/')) return false;
+
+  const spaceIdx  = trimmed.indexOf(' ');
+  const cmd       = (spaceIdx === -1 ? trimmed.slice(1) : trimmed.slice(1, spaceIdx)).toLowerCase();
+  const args      = spaceIdx === -1 ? '' : trimmed.slice(spaceIdx + 1).trim();
+
+  // ── /stats ────────────────────────────────────────────────────────────────
+  if (cmd === 'stats') {
+    const s = store.getStats();
+    const top = s.topUsers.length > 0
+      ? s.topUsers.map((u, i) => `  ${i + 1}. ${u}`).join('\n')
+      : '  (no messages yet)';
+
+    await safeReply(
+      message,
+      `📊 *SuSh Bot Stats*\n\n` +
+      `👥 Unique guests: *${s.totalUsers}*\n` +
+      `💬 Total messages: *${s.totalMessages}*\n\n` +
+      `*Top 5 active guests:*\n${top}`
+    );
+    return true;
+  }
+
+  // ── /broadcast ────────────────────────────────────────────────────────────
+  if (cmd === 'broadcast') {
+    if (!args) {
+      await safeReply(message, '⚠️ Usage: /broadcast <your message>');
+      return true;
+    }
+
+    const allUsers = store.getAllUserIds();
+    // Exclude admin's own number from broadcast
+    const targets  = allUsers.filter(uid => uid !== ADMIN_JID);
+
+    if (targets.length === 0) {
+      await safeReply(message, '📢 No guests to broadcast to yet.');
+      return true;
+    }
+
+    await safeReply(
+      message,
+      `📢 Broadcasting to *${targets.length}* guest(s)…\n\nMessage:\n${args}`
+    );
+
+    let sent = 0;
+    let failed = 0;
+    for (const userId of targets) {
+      try {
+        const chat = await client.getChatById(userId);
+        await chat.sendMessage(args);
+        sent++;
+        // Brief pause between messages to avoid WhatsApp rate-limiting the sender
+        await new Promise(r => setTimeout(r, 800));
+      } catch (_) {
+        failed++;
+      }
+    }
+
+    await safeReply(
+      message,
+      `✅ Broadcast complete.\n✔️ Sent: ${sent}  ❌ Failed: ${failed}`
+    );
+    return true;
+  }
+
+  // ── /reset ────────────────────────────────────────────────────────────────
+  if (cmd === 'reset') {
+    if (!args) {
+      await safeReply(message, '⚠️ Usage: /reset <phone>  (e.g. /reset 919876543210)');
+      return true;
+    }
+    const phone  = args.replace(/\D/g, '');
+    const target = `${phone}@c.us`;
+    store.resetHistory(target);
+    await safeReply(message, `🔄 Conversation history cleared for *${phone}*.`);
+    return true;
+  }
+
+  // ── Unknown admin command ─────────────────────────────────────────────────
+  await safeReply(
+    message,
+    `🤖 *Admin commands:*\n\n` +
+    `• /stats\n` +
+    `• /broadcast <message>\n` +
+    `• /reset <phone>`
+  );
+  return true;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MESSAGE HANDLERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Handles a plain text message.
- * Shows a typing indicator → queries GPT → replies with text.
- */
 async function handleText(message, userId, text) {
   console.log(`📩  [${userId}] (text) "${text}"`);
   try {
+    await safeReact(message, '⏳');
     const chat = await message.getChat();
     await chat.sendStateTyping();
 
     const reply = await askOpenAI(userId, text);
     await message.reply(reply);
+    await safeReact(message, '✅');
     console.log(`📤  [${userId}] Text reply sent.`);
   } catch (err) {
     console.error(`❌  [${userId}] Text handler error:`, err.message);
+    await safeReact(message, '❌');
     await safeReply(message, FALLBACK_MSG);
   }
 }
 
-/**
- * Handles a voice note (ptt) or audio file.
- *
- * Full pipeline:
- *   Download OGG  →  Whisper STT  →  GPT-4o-mini  →  gTTS + ffmpeg  →  OGG voice note reply
- */
 async function handleVoiceNote(message, userId) {
   console.log(`🎙️  [${userId}] Voice note received – processing...`);
   let oggPath = null;
 
   try {
-    // Show typing indicator while the pipeline runs
+    await safeReact(message, '⏳');
     const chat = await message.getChat();
     await chat.sendStateTyping();
 
-    // ── 1. Download the voice note from WhatsApp ──────────────────────────────
+    // 1. Download
     const media = await message.downloadMedia();
     if (!media?.data) {
       await safeReply(message, "Hmm, I couldn't download your voice note 🙈 Please try again!");
       return;
     }
 
-    // ── 2. Transcribe (OpenAI Whisper – auto-detects Hindi / English / Hinglish) ──
+    // 2. Transcribe (Whisper)
     const transcribed = await transcribeVoiceNote(openai, media.data);
     console.log(`🗣️  [${userId}] Transcribed: "${transcribed}"`);
 
@@ -282,35 +373,32 @@ async function handleVoiceNote(message, userId) {
       return;
     }
 
-    // ── 3. Get GPT-4o-mini response (same conversation memory as text) ─────────
+    // 3. GPT reply
     const reply = await askOpenAI(userId, transcribed);
     console.log(`🤖  [${userId}] GPT replied. Converting to voice...`);
 
-    // ── 4. Convert reply text → OGG Opus voice note ───────────────────────────
-    oggPath = await textToVoiceNote(reply);
+    // 4. Text → OGG Opus voice note (OpenAI TTS)
+    oggPath = await textToVoiceNote(openai, reply);
 
-    // ── 5. Send back as a WhatsApp voice note (replies to the original message) ──
+    // 5. Send voice note back
     const voiceMedia = new MessageMedia(
       'audio/ogg; codecs=opus',
       fs.readFileSync(oggPath).toString('base64'),
       'reply.ogg'
     );
     await message.reply(voiceMedia, null, { sendAudioAsVoice: true });
+    await safeReact(message, '✅');
     console.log(`📤  [${userId}] Voice reply sent.`);
 
   } catch (err) {
     console.error(`❌  [${userId}] Voice handler error:`, err.message);
+    await safeReact(message, '❌');
     await safeReply(message, FALLBACK_MSG);
   } finally {
-    // Always clean up the temp OGG file
-    if (oggPath) try { if (fs.existsSync(oggPath)) fs.unlinkSync(oggPath); } catch (_) {}
+    if (oggPath) try { if (fs.existsSync(oggPath)) fs.unlinkSync(oggPath); } catch (_) { }
   }
 }
 
-/**
- * Handles unsupported media types (images, video, documents, stickers).
- * Sends a friendly explanation without crashing.
- */
 async function handleUnsupportedMedia(message, msgType) {
   const labels = {
     image:    'image 📸',
@@ -332,106 +420,129 @@ async function handleUnsupportedMedia(message, msgType) {
 // WHATSAPP CLIENT
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Fresh session every run: clear cached auth so QR scan is required
-const authPath = path.join(__dirname, '.wwebjs_auth');
-const cachePath = path.join(__dirname, '.wwebjs_cache');
-for (const dir of [authPath, cachePath]) {
-  if (fs.existsSync(dir)) {
-    try {
-      fs.rmSync(dir, { recursive: true });
-    } catch (err) {
-      console.warn(`⚠️  Could not clear ${path.basename(dir)}. Stop any running bot first, then retry.`);
-    }
-  }
+// On Railway, CHROME_PATH can point to the system Chromium installed via nixpacks
+// (set this in Railway's environment variables dashboard if needed).
+const puppeteerArgs = {
+  headless: true,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',   // prevents crashes in low-memory environments
+    '--disable-gpu',             // not needed in headless server environments
+  ],
+};
+if (process.env.CHROME_PATH) {
+  puppeteerArgs.executablePath = process.env.CHROME_PATH;
 }
 
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
-  puppeteer: {
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  },
+  authStrategy: new LocalAuth({ dataPath: process.env.WWEBJS_AUTH_PATH || './.wwebjs_auth' }),
+  puppeteer: puppeteerArgs,
 });
 
 // ── QR Code ───────────────────────────────────────────────────────────────────
 const QR_FILE = path.join(__dirname, 'qr-auth.png');
 
 client.on('qr', async (qr) => {
-  console.log('\n📱  Generating QR code for WhatsApp authentication...\n');
+  console.log('\n📱  Generating QR code for WhatsApp authentication...');
+  
+  // 1. Print to Terminal (for Railway logs)
+  qrcodeTerminal.generate(qr, { small: true });
+
+  // 2. Save to File (for local debugging)
   try {
     await QRCode.toFile(QR_FILE, qr, {
       width: 280, margin: 2,
       color: { dark: '#000000', light: '#ffffff' },
     });
-    const openCmd = process.platform === 'darwin' ? 'open'
-                  : process.platform === 'win32'  ? 'start'
-                  :                                 'xdg-open';
-    execSync(`${openCmd} "${QR_FILE}"`, { stdio: 'ignore' });
-    console.log('   ✅ QR code opened in your default image viewer.');
+    console.log(`✅  QR saved to ${QR_FILE}\n`);
+    
+    // Auto-open only makes sense when running locally (Mac)
+    if (!process.env.RAILWAY_ENVIRONMENT) {
+      const openCmd = process.platform === 'darwin' ? 'open'
+        : process.platform === 'win32' ? 'start'
+          : 'xdg-open';
+      execSync(`${openCmd} "${QR_FILE}"`, { stdio: 'ignore' });
+      console.log('   ✅ QR code opened in your default image viewer.');
+    } else {
+      console.log('   ⚠️  Running on Railway — QR code saved to:', QR_FILE);
+      console.log('   Use "railway volume cp" to retrieve it, or pre-upload the session.');
+    }
     console.log('   (Open WhatsApp → Linked Devices → Link a Device)\n');
   } catch (err) {
-    console.error('   Could not auto-open QR. Check the file manually:', QR_FILE);
+    console.error('   Could not generate QR. Error:', err.message);
   }
 });
 
 // ── Ready ─────────────────────────────────────────────────────────────────────
 client.on('ready', () => {
   botReadyAt = Date.now();
+  const userCount = store.getUserCount();
   console.log('\n✅  WhatsApp bot is live and ready!');
-  console.log(`🤖  Model       : ${MODEL}`);
-  console.log('🎙️  Voice notes : transcribe (Whisper) + respond (gTTS voice note)');
-  console.log('📸  Images      : friendly decline message');
+  console.log(`🤖  Model        : ${MODEL}`);
+  console.log(`🎙️  Voice notes  : Whisper STT → GPT → OpenAI TTS`);
+  console.log(`👥  Known guests : ${userCount}`);
+  console.log(`🔒  Admin        : ${ADMIN_JID || 'not configured (set ADMIN_NUMBER in .env)'}`);
+  console.log(`🔍  Web search   : ${SEARCH_ENABLED ? 'enabled (Serper)' : 'disabled'}`);
   console.log('💬  Waiting for messages...\n');
 });
 
-// ── Auth failure ──────────────────────────────────────────────────────────────
-client.on('auth_failure', (msg) => {
-  console.error('❌  Authentication failed:', msg);
-});
-
-// ── Disconnected ──────────────────────────────────────────────────────────────
-client.on('disconnected', (reason) => {
-  console.warn('⚠️   Bot disconnected:', reason);
-});
+client.on('auth_failure', (msg) => console.error('❌  Authentication failed:', msg));
+client.on('disconnected',  (reason) => console.warn('⚠️   Bot disconnected:', reason));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MESSAGE ROUTER
-// Routes incoming messages to the correct handler based on type.
-//
-//  'chat'                     → handleText
-//  'ptt' (push-to-talk)       → handleVoiceNote
-//  'audio'                    → handleVoiceNote
-//  'image','video','document',
-//  'sticker'                  → handleUnsupportedMedia (friendly decline)
-//   everything else           → silently ignored
 // ─────────────────────────────────────────────────────────────────────────────
 
 client.on('message', async (message) => {
-  // Skip group chats and WhatsApp status broadcasts
-  if (message.isGroupMsg)                   return;
-  if (message.from === 'status@broadcast')  return;
+  if (message.isGroupMsg)               return;
+  if (message.from === 'status@broadcast') return;
+  if (!botReadyAt)                      return;
 
-  // Ignore backlog: only reply to messages received AFTER the bot connected
-  if (!botReadyAt) return;
   const msgTimeMs = (message.timestamp || 0) * 1000;
-  if (msgTimeMs < botReadyAt) return;
+  if (msgTimeMs < botReadyAt)           return;
 
-  const userId  = message.from;   // e.g. "919876543210@c.us"
-  const msgType = message.type;   // 'chat' | 'ptt' | 'audio' | 'image' | ...
+  const userId  = message.from;
+  const msgType = message.type;
 
-  // ── Images, videos, documents, stickers → polite decline ─────────────────
+  // ── Register / update user ────────────────────────────────────────────────
+  let contactName = '';
+  try {
+    const contact = await message.getContact();
+    contactName   = contact.pushname || contact.name || '';
+  } catch (_) { }
+  store.touchUser(userId, contactName);
+
+  // ── Admin commands (only for configured admin number) ─────────────────────
+  if (ADMIN_JID && userId === ADMIN_JID && msgType === 'chat') {
+    const text = (message.body || '').trim();
+    if (text.startsWith('/')) {
+      const handled = await handleAdminCommand(message, text);
+      if (handled) return;
+    }
+  }
+
+  // ── Rate limit check ──────────────────────────────────────────────────────
+  if (isRateLimited(userId)) {
+    console.warn(`🚫  [${userId}] Rate limited`);
+    await safeReply(
+      message,
+      "You're sending messages very quickly! 😅 Please wait a moment before trying again. 🙏"
+    );
+    return;
+  }
+
+  // ── Route by message type ─────────────────────────────────────────────────
   if (['image', 'video', 'document', 'sticker'].includes(msgType)) {
     await handleUnsupportedMedia(message, msgType);
     return;
   }
 
-  // ── Voice notes & audio files → full voice pipeline ───────────────────────
   if (msgType === 'ptt' || msgType === 'audio') {
     await handleVoiceNote(message, userId);
     return;
   }
 
-  // ── Plain text ─────────────────────────────────────────────────────────────
   if (msgType === 'chat') {
     const text = (message.body || '').trim();
     if (!text) return;
@@ -439,8 +550,67 @@ client.on('message', async (message) => {
     return;
   }
 
-  // Any other type (location, contact, etc.) — silently skip
+  // Any other type (location, contact card, etc.) — silently skip
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HTTP HEALTH CHECK SERVER
+//
+// Railway requires the process to bind to a port so it can:
+//   (a) Detect that the service started successfully.
+//   (b) Send health-check requests (healthcheckPath = "/health" in railway.toml).
+//
+// Without this, Railway marks the deployment as crashed even if the WhatsApp
+// bot is running perfectly.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PORT = process.env.PORT || 3000;
+
+const httpServer = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    const isReady = botReadyAt !== null;
+    res.writeHead(isReady ? 200 : 503, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status:     isReady ? 'ready' : 'initialising',
+      uptime:     isReady ? Math.round((Date.now() - botReadyAt) / 1000) + 's' : null,
+      users:      store.getUserCount(),
+      messages:   store.getStats().totalMessages,
+      model:      MODEL,
+      search:     SEARCH_ENABLED,
+    }));
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('SuSh Wedding Bot 💍');
+  }
+});
+
+httpServer.listen(PORT, () => {
+  console.log(`🌐  Health server listening on port ${PORT}  →  GET /health`);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTO-MIGRATION (Local -> Volume)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const AUTH_PATH = process.env.WWEBJS_AUTH_PATH || './.wwebjs_auth';
+
+function migrateSessionToVolume() {
+  const localPath = path.join(__dirname, '.wwebjs_auth');
+  
+  // If we are on Railway and have a volume mount, but it's empty, and we have a local session...
+  if (process.env.RAILWAY_ENVIRONMENT && AUTH_PATH.startsWith('/data') && fs.existsSync(localPath)) {
+    if (!fs.existsSync(AUTH_PATH)) {
+      console.log('🚚  First-time setup: Migrating local session to persistent volume...');
+      try {
+        // Simple recursive copy (native node)
+        fs.cpSync(localPath, AUTH_PATH, { recursive: true });
+        console.log('✅  Session migrated to volume.');
+      } catch (err) {
+        console.error('❌  Migration failed:', err.message);
+      }
+    }
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
@@ -450,4 +620,5 @@ console.log('\n🎊  Surakshit & Shreyaa Wedding Bot');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('   Initialising WhatsApp client...\n');
 
+migrateSessionToVolume();
 client.initialize();

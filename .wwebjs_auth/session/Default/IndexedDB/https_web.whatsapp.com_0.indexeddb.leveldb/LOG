@@ -1,0 +1,29 @@
+2026/04/30-17:57:25.591 6988f Reusing MANIFEST /Users/surakshitsoni/Desktop/shreyaahuisurakshitCHATBOT/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/30-17:57:25.592 6988f Recovering log #1560
+2026/04/30-17:57:25.597 6988f Reusing old log /Users/surakshitsoni/Desktop/shreyaahuisurakshitCHATBOT/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/001560.log 
+2026/04/30-17:59:22.447 6989d Level-0 table #1572: started
+2026/04/30-17:59:22.457 6989d Level-0 table #1572: 1718316 bytes OK
+2026/04/30-17:59:22.459 6989d Delete type=0 #1560
+2026/04/30-17:59:38.766 69891 Compacting 1@1 + 8@2 files
+2026/04/30-17:59:38.803 69891 Generated table #1573@1: 64452 keys, 2235271 bytes
+2026/04/30-17:59:38.828 69891 Generated table #1574@1: 52941 keys, 2214356 bytes
+2026/04/30-17:59:38.840 69891 Generated table #1575@1: 11968 keys, 2164764 bytes
+2026/04/30-17:59:38.849 69891 Generated table #1576@1: 1714 keys, 2163083 bytes
+2026/04/30-17:59:38.870 69891 Generated table #1577@1: 28438 keys, 2233062 bytes
+2026/04/30-17:59:38.881 69891 Generated table #1578@1: 13069 keys, 2144793 bytes
+2026/04/30-17:59:38.912 69891 Generated table #1579@1: 108854 keys, 2261088 bytes
+2026/04/30-17:59:38.940 69891 Generated table #1580@1: 84695 keys, 2000080 bytes
+2026/04/30-17:59:38.940 69891 Compacted 1@1 + 8@2 files => 17416497 bytes
+2026/04/30-17:59:38.941 69891 compacted to: files[ 0 0 8 0 0 0 0 ]
+2026/04/30-17:59:38.941 69891 Delete type=2 #1568
+2026/04/30-17:59:38.941 69891 Delete type=2 #1569
+2026/04/30-17:59:38.941 69891 Delete type=2 #1567
+2026/04/30-17:59:38.941 69891 Delete type=2 #1572
+2026/04/30-17:59:38.941 69891 Delete type=2 #1566
+2026/04/30-17:59:38.941 69891 Delete type=2 #1564
+2026/04/30-17:59:38.941 69891 Delete type=2 #1565
+2026/04/30-17:59:38.941 69891 Delete type=2 #1562
+2026/04/30-17:59:38.941 69891 Delete type=2 #1563
+2026/04/30-18:18:09.083 69891 Level-0 table #1582: started
+2026/04/30-18:18:09.102 69891 Level-0 table #1582: 1118262 bytes OK
+2026/04/30-18:18:09.106 69891 Delete type=0 #1571

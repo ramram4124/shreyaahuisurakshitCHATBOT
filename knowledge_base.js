@@ -50,8 +50,8 @@ const WEDDING_INFO = {
       { time: '9:00 AM',  event: 'Bride\'s Choora Ceremony',       venue: 'InterContinental Jaipur' },
       { time: '12:00 PM', event: 'Punjabi Carnival',                venue: 'InterContinental Jaipur',  theme: 'Traditional Punjabi – bright colours, Patiala suits, phulkari dupattas, festive vibes!' },
       { time: '8:00 PM',  event: 'Sehrabandi & Baraat Assembly',   venue: 'InterContinental Jaipur' },
-      { time: '9:00 PM',  event: 'Milni & Varmala',                venue: 'Atlantiis Jaipur',         note: 'Dinner will be ongoing throughout the evening.' },
-      { time: '2:00 AM',  event: 'The Pheras (Wedding Ceremony)',  venue: 'Atlantiis Jaipur' },
+      { time: '9:00 PM',  event: 'Milni, Varmala & Wedding Reception', venue: 'Atlantis Jaipur',         note: 'Dinner will be ongoing throughout the evening.' },
+      { time: '2:00 AM',  event: 'The Pheras (Wedding Ceremony)',  venue: 'Atlantis Jaipur' },
     ],
   },
 
@@ -98,7 +98,7 @@ const WEDDING_INFO = {
       tip:     'Wear sturdy footwear – you will be dancing in the procession! 🎺🥁',
     },
     {
-      event:   'Milni, Varmala & Pheras (9:00 PM onwards, Day 2)',
+      event:   'Milni, Varmala, Reception & Pheras (9:00 PM onwards, Day 2)',
       vibe:    'Sacred, elegant, and the most special moments of the entire wedding.',
       general: 'Traditional heavy Indian wear. Pastels, rich reds, or golds.',
       women:   'Heavy lehengas or sarees in traditional bridal colours.',
@@ -120,7 +120,7 @@ const WEDDING_INFO = {
   // ── Transport ────────────────────────────────────────────────────────────────
   transport: {
     airportPickup:  'Pickup is arranged! Contact the Transport Manager (details to be shared by the family) and they will sort you out. ✈️🚂',
-    toAtlantiis:    'Atlantiis Jaipur is just across the road from InterContinental! Vehicles will be stationed at the hotel porch for a convenient shuttle service – no need to arrange your own transport. 🚌',
+    toAtlantis:    'Atlantis Jaipur is just across the road from InterContinental! Vehicles will be stationed at the hotel porch for a convenient shuttle service – no need to arrange your own transport. 🚌',
   },
 
   // ── Housekeeping Tips ────────────────────────────────────────────────────────
@@ -137,7 +137,7 @@ const WEDDING_INFO = {
   // ── Venue Maps & Contact (hardcoded – no web search needed) ─────────────────
   venueMaps: {
     intercontinentalMapsLink: 'https://maps.app.goo.gl/qqNDq6xbuFhMusWEA?g_st=ic',
-    atlantiisMapsLink:        'https://maps.app.goo.gl/Ru1NAfx9QHb59REJ8?g_st=ic',
+    atlantisMapsLink:        'https://maps.app.goo.gl/Ru1NAfx9QHb59REJ8?g_st=ic',
     intercontinentalPhone:    '+91 141 717 6666',
   },
 
@@ -155,13 +155,13 @@ const WEDDING_INFO = {
     mayera:  'Surakshit\'s maternal uncles (mamas) and family arrive with gifts, clothes, and blessings for the groom and his mother. A heartwarming ritual that celebrates the love and support of the maternal side of the family.',
     reetein: 'Traditional pre-wedding rituals for Shreyaa and her family – soulful customs and blessings to prepare the bride for her new journey. Expect traditional songs, deep family bonding, and emotional moments. Dress code: Traditional Indian wear.',
     choora:  'One of the most significant moments for Shreyaa! Her maternal uncles (mamas) gift her red and white bangles (the Choora), purified in milk and rose petals – very auspicious and emotional. Starting at 9:00 AM, so grab a quick tea or coffee from The Lounge before heading in! Dress: Traditional morning wear, comfortable for the Punjabi Carnival that follows.',
-    pheras:  'The sacred fire ceremony where Shreyaa and Surakshit take their vows. Starts at 2:00 AM at Atlantiis Jaipur (indoors) and takes approximately 2 hours. The most sacred part of the wedding, but not mandatory for all guests – elders and little ones who need to retire early are completely understood. Give blessings during Varmala or Dinner earlier in the evening. Jaipur nights can be chilly, so carry a light shawl!',
+    pheras:  'The sacred fire ceremony where Shreyaa and Surakshit take their vows. Starts at 2:00 AM at Atlantis Jaipur (indoors) and takes approximately 2 hours. The most sacred part of the wedding, but not mandatory for all guests – elders and little ones who need to retire early are completely understood. Give blessings during Varmala or Dinner earlier in the evening. Jaipur nights can be chilly, so carry a light shawl!',
   },
 
   // ── Baraat Details ───────────────────────────────────────────────────────────
   baraat: {
     assembly:   'Main Porch of the InterContinental Jaipur at 8:00 PM on the 6th.',
-    procession: 'Short, high-energy procession from the InterContinental gate across to Atlantiis Jaipur. Shuttle cars are on standby for anyone who prefers to ride!',
+    procession: 'Short, high-energy procession from the InterContinental gate across to Atlantis Jaipur. Shuttle cars are on standby for anyone who prefers to ride!',
     safaTying:  'Professional Safa-tying (turban) experts will be at the Baraat assembly point from 7:30 PM on the 6th – no need to arrange your own!',
   },
 
@@ -181,8 +181,8 @@ const WEDDING_INFO = {
     tipping:          'No tipping required! The families have taken care of all hotel service charges and gratuities. Just relax and enjoy! 💕',
     vaarna:           'All entertainers are fully paid for. But if the festive spirit moves you, a traditional Vaarna (circling money over the couple\'s heads for luck) and giving it to the Dholis is a lovely gesture – completely optional!',
     earlyArrival:     'Arriving before room check-in (1 PM)? Head to The Lounge on the Ground Floor – open 24/7 with Maggi, Chai, and snacks to keep you comfortable!',
-    rainPlan:         'Plan B is ready! If the weather doesn\'t cooperate, all ceremonies will move to the beautiful indoor ballrooms at the InterContinental or Atlantiis.',
-    mosquito:         'The hotel conducts regular pest control. Mosquito repellent sprays and patches will also be available near the Atlantiis entrance just in case.',
+    rainPlan:         'Plan B is ready! If the weather doesn\'t cooperate, all ceremonies will move to the beautiful indoor ballrooms at the InterContinental or Atlantis.',
+    mosquito:         'The hotel conducts regular pest control. Mosquito repellent sprays and patches will also be available near the Atlantis entrance just in case.',
     dryWeather:       'Dry Rajasthan air bothering your throat or skin? Grab a soothing honey-ginger tea from The Lounge, or request a room humidifier from Housekeeping.',
     pets:             'Strict no-pet policy at both venues and the hotel. Please ensure your furry friends are well taken care of at home!',
     externalVisitors: 'This is a private catered event with strict hotel security. Only registered wedding guests are allowed into the venues and event halls.',
@@ -282,7 +282,7 @@ WEDDING OVERVIEW:
    📍 Maps: ${WEDDING_INFO.venueMaps.intercontinentalMapsLink}
    📞 Phone: ${WEDDING_INFO.venueMaps.intercontinentalPhone}
 💒 Day 2 Wedding Venue: ${WEDDING_INFO.venues.wedding}
-   📍 Maps: ${WEDDING_INFO.venueMaps.atlantiisMapsLink}
+   📍 Maps: ${WEDDING_INFO.venueMaps.atlantisMapsLink}
 🎶 Sangeet Hall: ${WEDDING_INFO.venues.sangeet}
 #️⃣ Hashtag: ${WEDDING_INFO.couple.hashtag}
 📸 Instagram: ${WEDDING_INFO.couple.instagram}
@@ -320,7 +320,7 @@ FOOD & THE LOUNGE (24-HOUR SNACK SPOT):
 TRANSPORT:
 ━━━━━━━━━━━━━━━━━━━━━━
 - Airport / Railway pickup: ${WEDDING_INFO.transport.airportPickup}
-- Getting to Atlantiis Jaipur on Day 2: ${WEDDING_INFO.transport.toAtlantiis}
+- Getting to Atlantis Jaipur on Day 2: ${WEDDING_INFO.transport.toAtlantis}
 
 ━━━━━━━━━━━━━━━━━━━━━━
 HOUSEKEEPING:
@@ -354,7 +354,7 @@ ${WEDDING_INFO.ceremonies.reetein}
 *Choora Ceremony (Day 2, 9:00 AM):*
 ${WEDDING_INFO.ceremonies.choora}
 
-*The Pheras (Day 2, 2:00 AM – at Atlantiis):*
+*The Pheras (Day 2, 2:00 AM – at Atlantis):*
 ${WEDDING_INFO.ceremonies.pheras}
 
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -406,7 +406,7 @@ You have access to a web_search tool. Use it automatically (without telling the 
 - Any other live factual detail not covered above
 
 *DO NOT* use web_search for:
-- InterContinental or Atlantiis Google Maps links → already in WEDDING OVERVIEW above
+- InterContinental or Atlantis Google Maps links → already in WEDDING OVERVIEW above
 - InterContinental phone number → already in WEDDING OVERVIEW above
 - Jaipur July weather → share the AccuWeather link from the WEATHER section above
 - Anything already answered by the knowledge base (itinerary, dress codes, food, transport etc.)

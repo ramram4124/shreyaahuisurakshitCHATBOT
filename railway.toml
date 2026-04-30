@@ -1,0 +1,33 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RAILWAY CONFIGURATION
+#
+# ── Persistent Volume (REQUIRED for WhatsApp session) ────────────────────────
+# Without a persistent volume, the WhatsApp session (.wwebjs_auth/) is wiped
+# on every deploy/restart and the bot can never reconnect without a new QR scan.
+#
+# Steps to add a volume in the Railway dashboard:
+#   1. Go to your service → Settings → Volumes
+#   2. Add a volume, mount path: /data
+#   3. Set env var: STORE_PATH=/data/store.json
+#   4. On first deploy, copy your local .wwebjs_auth/ to the volume using
+#      the Railway CLI:  railway volume cp .wwebjs_auth /data/.wwebjs_auth
+#
+# ── First-time QR scan ───────────────────────────────────────────────────────
+# The first run MUST happen locally (Mac Mini) to scan the QR code and create
+# the session. Then copy the session to Railway's persistent volume before
+# deploying to the cloud.
+#
+# ── Health Check ─────────────────────────────────────────────────────────────
+# Railway uses the /health endpoint to determine if the service is alive.
+# The HTTP server in index.js responds on PORT (Railway sets this automatically).
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node index.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

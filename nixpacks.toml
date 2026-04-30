@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# NIXPACKS CONFIGURATION  –  Railway deployment
+#
+# whatsapp-web.js drives a headless Chromium (via Puppeteer).
+# The bundled Chromium binary needs these system libraries to run on Railway's
+# Nix-based Linux environment.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[phases.setup]
+nixPkgs = [
+  # Core Node.js environment
+  "nodejs_20",
+
+  # Core Chromium shared libraries
+  "nss",
+  "nspr",
+  "atk",
+  "cups",
+  "libdrm",
+  "mesa",
+  "expat",
+  "glib",
+  "pango",
+  "cairo",
+  "alsa-lib",
+  "gtk3",
+
+  # X11 / display (needed even in headless mode)
+  "xorg.libX11",
+  "xorg.libXcomposite",
+  "xorg.libXcursor",
+  "xorg.libXdamage",
+  "xorg.libXext",
+  "xorg.libXfixes",
+  "xorg.libXi",
+  "xorg.libXrandr",
+  "xorg.libxcb",
+]
+
+[phases.install]
+cmds = ["npm ci --omit=dev"]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "node index.js"
