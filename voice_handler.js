@@ -48,8 +48,8 @@ async function transcribeVoiceNote(openaiClient, base64Data) {
       // and names in Hindi / English / Hinglish
       prompt: [
         'Wedding of Surakshit and Shreyaa in Jaipur.',
-        'Venues: InterContinental Jaipur, Atlantiis Jaipur, Convergence Ballroom.',
-        'Events: Sangeet, Haldi, Mayera, Reets, Choora, Sehrabandi, Baraat, Milni, Varmala, Pheras.',
+        'Venues: InterContinental Jaipur, Atlantis Jaipur, Atlantis, Convergence Ballroom.',
+        'Events: Welcome Lunch, Mayera, Reetein, Sangeet, Chooda Ceremony, Gidda & Gossip, Sehra Bandi, Baraat Assembly, Baraat Welcome, Varmala, Reception, Pheras, Breakfast.',
         'Hashtag: ShreyaaHuiSurakshit.',
         'Guests may speak in Hindi, English, or Hinglish.',
       ].join(' '),

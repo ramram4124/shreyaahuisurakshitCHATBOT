@@ -21,14 +21,15 @@ const WEDDING_INFO = {
   dates: {
     day1:     'Sunday, 5th July 2026',
     day2:     'Monday, 6th July 2026',
+    day3:     'Tuesday, 7th July 2026',
     checkout: 'Tuesday, 7th July 2026 at 10:00 AM',
   },
 
   // ── Venues ──────────────────────────────────────────────────────────────────
   venues: {
-    stay:      'InterContinental Jaipur',   // home-base + all Day 1 events
-    wedding:   'Atlantis Jaipur',          // main wedding events on Day 2
-    sangeet:   'Convergence Ballroom, Ground Floor – InterContinental Jaipur',
+    stay:      'InterContinental Jaipur, Sitapura',   // home-base + all Day 1/3 events
+    wedding:   'Atlantis, Sitapura',                 // main wedding events on Day 2
+    sangeet:   'Convergence Ballroom, InterContinental',
     lounge:    'The Lounge, Ground Floor (in front of hotel reception) – InterContinental Jaipur',
   },
 
@@ -42,68 +43,104 @@ const WEDDING_INFO = {
   // ── Full Itinerary ──────────────────────────────────────────────────────────
   itinerary: {
     day1: [
-      { time: '1:00 PM',   event: 'Check-in & Welcome Lunch',                         venue: 'InterContinental Jaipur' },
-      { time: 'Afternoon', event: 'Mayera (Groom\'s Side) & Reets (Bride\'s Side)',   venue: 'Designated hotel halls at InterContinental Jaipur (hall details TBD)' },
-      { time: '8:00 PM',   event: 'Sangeet',                                           venue: 'Convergence Ballroom, Ground Floor – InterContinental Jaipur' },
+      { time: '01:00 PM', event: 'Welcome Lunch & Mayera',   venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '01:00 PM', event: 'Welcome Lunch & Reetein', venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '08:00 PM', event: 'Sangeet',                  venue: 'Convergence Ballroom, InterContinental' },
     ],
     day2: [
-      { time: '9:00 AM',  event: 'Bride\'s Choora Ceremony',       venue: 'InterContinental Jaipur' },
-      { time: '12:00 PM', event: 'Punjabi Carnival',                venue: 'InterContinental Jaipur',  theme: 'Traditional Punjabi – bright colours, Patiala suits, phulkari dupattas, festive vibes!' },
-      { time: '8:00 PM',  event: 'Sehrabandi & Baraat Assembly',   venue: 'InterContinental Jaipur' },
-      { time: '9:00 PM',  event: 'Milni, Varmala & Wedding Reception', venue: 'Atlantis Jaipur',         note: 'Dinner will be ongoing throughout the evening.' },
-      { time: '2:00 AM',  event: 'The Pheras (Wedding Ceremony)',  venue: 'Atlantis Jaipur' },
+      { time: '10:00 AM', event: 'Chooda Ceremony',                venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '11:00 AM', event: 'Gidda & Gossip',                 venue: 'Convergence Ballroom, InterContinental', theme: 'High Beats & Punjabi Carnival – come dressed for dhol, gidda, and Punjabi masti.' },
+      { time: '06:30 PM', event: 'Sehra Bandi & Baraat Assembly', venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '08:00 PM', event: 'Baraat Welcome',                 venue: 'Atlantis, Sitapura' },
+      { time: '08:30 PM', event: 'Varmala • Reception',            venue: 'Atlantis, Sitapura', note: 'Dinner will be ongoing throughout the evening.' },
+    ],
+    day3: [
+      { time: '02:00 AM', event: 'The Pheras', venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '08:00 AM', event: 'Breakfast',  venue: 'InterContinental Jaipur, Sitapura' },
     ],
   },
 
   // ── Wardrobe Guide per Event ────────────────────────────────────────────────
   wardrobe: [
     {
-      event:   'Mayera / Reets (Afternoon Day 1)',
-      vibe:    'Traditional family ceremony, vibrant and full of emotion.',
-      general: 'Bright, rich traditional ethnic wear. Think reds, greens, and oranges.',
-      women:   'Heavy ethnic suits, lehengas, or sarees in rich jewel tones.',
-      men:     'Kurtas or sherwanis in rich colours.',
-      tip:     'This is a meaningful family-centric ceremony – dress modestly and traditionally. 🙏',
+      event:   'Welcome Lunch & Mayera (01:00 PM, Sunday, 5th July 2026)',
+      vibe:    'Warm Welcome & Sacred Rituals',
+      general: 'Bring your brightest smiles and festive style.',
+      women:   'Vibrant ethnic wear (suits, lehengas, or sarees in bright colors).',
+      men:     'Kurtas or comfortable traditional wear in bright/festive colors.',
+      tip:     'This is the first event, so dress bright, happy, and ready to kick off the celebrations! 🌸',
     },
     {
-      event:   'Sangeet (8:00 PM Day 1)',
-      vibe:    'Musical night, dancing, glamorous. The ultimate pre-wedding party!',
-      general: 'Indo-western or glitzy ethnic wear. Comfort for heavy dancing is KEY.',
-      women:   'Evening gowns, flowy lehengas, or fusion outfits with shimmer.',
-      men:     'Bandhgalas, stylish Nehru jackets, or dressy Indo-western kurtas.',
-      tip:     'Wear comfortable footwear – you will be on the dance floor all night! 💃🕺',
+      event:   'Welcome Lunch & Reetein (01:00 PM, Sunday, 5th July 2026)',
+      vibe:    'Warm Welcome & Sacred Rituals',
+      general: 'Dress for a beautiful afternoon of traditions and blessings.',
+      women:   'Beautiful traditional suits, light lehengas, or sarees.',
+      men:     'Traditional kurtas or sherwanis.',
+      tip:     'Perfect for a warm afternoon of family rituals. 🙏',
     },
     {
-      event:   'Choora Ceremony (9:00 AM Day 2)',
-      vibe:    'Sacred and intimate morning ceremony for the bride.',
-      general: 'Simple, modest ethnic wear. Light, comfortable fabrics.',
-      women:   'Suits or light lehengas in soft colours.',
-      men:     'Simple kurta pajamas.',
-      tip:     'This is an early morning ceremony – keep it relaxed and comfortable. 🌅',
+      event:   'Sangeet (08:00 PM, Sunday, 5th July 2026)',
+      vibe:    'A Symphony of Dance & Glitz',
+      general: 'Dress to shine and dance the night away. ✨',
+      women:   'Glitzy lehengas, evening gowns, or fusion wear with shimmer and sparkle.',
+      men:     'Indo-western outfits, bandhgalas, or stylish Nehru jackets.',
+      tip:     'Make sure you wear comfortable footwear – the dance floor will be busy! 💃🕺',
     },
     {
-      event:   'Punjabi Carnival (12:00 PM Day 2)',
-      vibe:    'High-energy, colourful celebration with a full Punjabi theme!',
-      general: 'Traditional Punjabi theme is MANDATORY – go all out!',
-      women:   'Patiala suits, phulkari dupattas, bright colours – the more festive the better!',
-      men:     'Kurtas with churidars or Patiala salwar, safas (turbans) welcome!',
-      tip:     'Think bright colours and maximum festive energy! 🎨🥁',
+      event:   'Chooda Ceremony (10:00 AM, Monday, 6th July 2026)',
+      vibe:    'The Bride’s Sacred Adornment Ceremony',
+      general: 'Dress with grace for a morning of love and blessings.',
+      women:   'Graceful morning ethnic wear or light suits.',
+      men:     'Simple, comfortable kurtas.',
+      tip:     'This is a beautiful morning ceremony – keep it elegant, light, and comfortable. 🌅',
     },
     {
-      event:   'Sehrabandi & Baraat (8:00 PM Day 2)',
-      vibe:    'High-energy wedding procession with dhol, dancing, and pure celebration!',
-      general: 'Festive Indian wear in bright, celebratory colours.',
-      women:   'Heavy sarees or lehengas in bold colours.',
-      men:     'Safas (turbans), heavy embroidered kurtas, or sherwanis. Go all out!',
-      tip:     'Wear sturdy footwear – you will be dancing in the procession! 🎺🥁',
+      event:   'Gidda & Gossip (11:00 AM, Monday, 6th July 2026)',
+      vibe:    'High Beats & Punjabi Carnival',
+      general: 'Come dressed for dhol, gidda, and Punjabi masti.',
+      women:   'Vibrant Patiala suits, phulkari dupattas, and bright celebratory colors!',
+      men:     'Kurtas with Patiala salwars or churidars, festive colors. Safas (turbans) welcome!',
+      tip:     'It is a high-energy Punjabi Carnival – go colorful and celebrate! 🎨🥁',
     },
     {
-      event:   'Milni, Varmala, Reception & Pheras (9:00 PM onwards, Day 2)',
-      vibe:    'Sacred, elegant, and the most special moments of the entire wedding.',
-      general: 'Traditional heavy Indian wear. Pastels, rich reds, or golds.',
-      women:   'Heavy lehengas or sarees in traditional bridal colours.',
-      men:     'Sherwanis or formal kurta sets in regal colours.',
-      tip:     'This is the main ceremony – dress your absolute best. No casual outfits please! ✨',
+      event:   'Sehra Bandi & Baraat Assembly (06:30 PM, Monday, 6th July 2026)',
+      vibe:    'Regal Procession & Festivities',
+      general: 'Honour the occasion in timeless Indian elegance.',
+      women:   'Elegant traditional wear like lehengas, heavy sarees, or suits.',
+      men:     'Sherwanis or formal kurtas. Safa-tying experts will be at the porch to tie your turbans! 👑',
+      tip:     'Wear sturdy but elegant footwear as you will be dancing in the Baraat procession! 🎺',
+    },
+    {
+      event:   'Baraat Welcome (08:00 PM, Monday, 6th July 2026)',
+      vibe:    'A Royal Welcome & Union of Families',
+      general: 'Honour the occasion in timeless Indian elegance.',
+      women:   'Elegant traditional wear like lehengas, heavy sarees, or suits.',
+      men:     'Sherwanis or formal kurtas. Safas (turbans) welcome!',
+      tip:     'Welcoming the groom and his family at Atlantis with music and dhol! 🎉',
+    },
+    {
+      event:   'Varmala • Reception (08:30 PM, Monday, 6th July 2026)',
+      vibe:    'Fairytale Union & Grand Gala',
+      general: 'Honour the occasion in timeless Indian elegance.',
+      women:   'Your absolute best heavy Indian ethnic wear (lehengas, regal sarees).',
+      men:     'Regal sherwanis, bandhgalas, or formal suits.',
+      tip:     'This is the main reception evening – dress your absolute best! ✨',
+    },
+    {
+      event:   'The Pheras (02:00 AM, Tuesday, 7th July 2026)',
+      vibe:    'Wedding Ceremony & Holy Vows',
+      general: 'Traditional Sacred Attire',
+      women:   'Traditional sarees, lehengas, or heavy ethnic wear.',
+      men:     'Sherwanis, dhoti-kurtas, or traditional kurta sets.',
+      tip:     'It is late night/early morning and can get chilly at InterContinental Jaipur, so carrying a light shawl is highly recommended! 🧣',
+    },
+    {
+      event:   'Breakfast (08:00 AM, Tuesday, 7th July 2026)',
+      vibe:    'Morning Farewells & Feast',
+      general: 'Comfortable Casuals',
+      women:   'Comfortable casual outfits or light suits.',
+      men:     'Simple shirts, t-shirts, or casual kurtas.',
+      tip:     'A relaxed farewell breakfast – keep it comfy for your journey back! ✈️',
     },
   ],
 
@@ -136,8 +173,8 @@ const WEDDING_INFO = {
 
   // ── Venue Maps & Contact (hardcoded – no web search needed) ─────────────────
   venueMaps: {
-    intercontinentalMapsLink: 'https://maps.app.goo.gl/qqNDq6xbuFhMusWEA?g_st=ic',
-    atlantisMapsLink:        'https://maps.app.goo.gl/Ru1NAfx9QHb59REJ8?g_st=ic',
+    intercontinentalMapsLink: 'https://maps.app.goo.gl/xH9HeSscajuxf8AV9',
+    atlantisMapsLink:        'https://maps.app.goo.gl/Ei2TxNS64RA7mnAS7',
     intercontinentalPhone:    '+91 141 717 6666',
   },
 
@@ -154,15 +191,15 @@ const WEDDING_INFO = {
   ceremonies: {
     mayera:  'Surakshit\'s maternal uncles (mamas) and family arrive with gifts, clothes, and blessings for the groom and his mother. A heartwarming ritual that celebrates the love and support of the maternal side of the family.',
     reetein: 'Traditional pre-wedding rituals for Shreyaa and her family – soulful customs and blessings to prepare the bride for her new journey. Expect traditional songs, deep family bonding, and emotional moments. Dress code: Traditional Indian wear.',
-    choora:  'One of the most significant moments for Shreyaa! Her maternal uncles (mamas) gift her red and white bangles (the Choora), purified in milk and rose petals – very auspicious and emotional. Starting at 9:00 AM, so grab a quick tea or coffee from The Lounge before heading in! Dress: Traditional morning wear, comfortable for the Punjabi Carnival that follows.',
-    pheras:  'The sacred fire ceremony where Shreyaa and Surakshit take their vows. Starts at 2:00 AM at Atlantis Jaipur (indoors) and takes approximately 2 hours. The most sacred part of the wedding, but not mandatory for all guests – elders and little ones who need to retire early are completely understood. Give blessings during Varmala or Dinner earlier in the evening. Jaipur nights can be chilly, so carry a light shawl!',
+    choora:  'One of the most significant moments for Shreyaa! Her maternal uncles (mamas) gift her red and white bangles (the Choora), purified in milk and rose petals – very auspicious and emotional. Starting at 10:00 AM, so grab a quick tea or coffee from The Lounge before heading in! Dress: Traditional morning wear, comfortable for the Gidda & Gossip that follows.',
+    pheras:  'The sacred fire ceremony where Shreyaa and Surakshit take their vows. Starts at 2:00 AM at InterContinental Jaipur, Sitapura (indoors) and takes approximately 2 hours. The most sacred part of the wedding, but not mandatory for all guests – elders and little ones who need to retire early are completely understood. Give blessings during Varmala or Dinner earlier in the evening. Jaipur nights can be chilly, so carry a light shawl!',
   },
 
   // ── Baraat Details ───────────────────────────────────────────────────────────
   baraat: {
-    assembly:   'Main Porch of the InterContinental Jaipur at 8:00 PM on the 6th.',
-    procession: 'Short, high-energy procession from the InterContinental gate across to Atlantis Jaipur. Shuttle cars are on standby for anyone who prefers to ride!',
-    safaTying:  'Professional Safa-tying (turban) experts will be at the Baraat assembly point from 7:30 PM on the 6th – no need to arrange your own!',
+    assembly:   'Main Porch of the InterContinental Jaipur at 06:30 PM on the 6th.',
+    procession: 'Short, high-energy procession from the InterContinental gate across to Atlantis. Shuttle cars are on standby for anyone who prefers to ride!',
+    safaTying:  'Professional Safa-tying (turban) experts will be at the Baraat assembly point from 06:00 PM on the 6th – no need to arrange your own!',
   },
 
   // ── Guest Services & Hotel Amenities ────────────────────────────────────────
@@ -213,6 +250,16 @@ function buildSystemPrompt() {
 
   // Build Day 2 itinerary text
   const day2Text = WEDDING_INFO.itinerary.day2
+    .map(e => {
+      let line = `  • ${e.time} – ${e.event} (${e.venue})`;
+      if (e.theme) line += `\n      Theme: ${e.theme}`;
+      if (e.note)  line += `\n      Note: ${e.note}`;
+      return line;
+    })
+    .join('\n');
+
+  // Build Day 3 itinerary text
+  const day3Text = WEDDING_INFO.itinerary.day3
     .map(e => {
       let line = `  • ${e.time} – ${e.event} (${e.venue})`;
       if (e.theme) line += `\n      Theme: ${e.theme}`;
@@ -277,8 +324,8 @@ YOUR STRICT OPERATING RULES:
 WEDDING OVERVIEW:
 ━━━━━━━━━━━━━━━━━━━━━━
 💑 Couple: ${WEDDING_INFO.couple.groom} weds ${WEDDING_INFO.couple.bride}
-📅 Dates: ${WEDDING_INFO.dates.day1} & ${WEDDING_INFO.dates.day2}
-🏨 Stay & Day 1 Venue: ${WEDDING_INFO.venues.stay}
+📅 Dates: ${WEDDING_INFO.dates.day1}, ${WEDDING_INFO.dates.day2} & ${WEDDING_INFO.dates.day3}
+🏨 Stay & Day 1/3 Venue: ${WEDDING_INFO.venues.stay}
    📍 Maps: ${WEDDING_INFO.venueMaps.intercontinentalMapsLink}
    📞 Phone: ${WEDDING_INFO.venueMaps.intercontinentalPhone}
 💒 Day 2 Wedding Venue: ${WEDDING_INFO.venues.wedding}
@@ -302,6 +349,9 @@ ${day1Text}
 
 *Day 2 – Monday, 6th July 2026*
 ${day2Text}
+
+*Day 3 – Tuesday, 7th July 2026*
+${day3Text}
 
 ━━━━━━━━━━━━━━━━━━━━━━
 WARDROBE GUIDE (per event):
@@ -351,10 +401,10 @@ ${WEDDING_INFO.ceremonies.mayera}
 *Reetein (Day 1 – Bride's Side):*
 ${WEDDING_INFO.ceremonies.reetein}
 
-*Choora Ceremony (Day 2, 9:00 AM):*
+*Choora Ceremony (Day 2, 10:00 AM):*
 ${WEDDING_INFO.ceremonies.choora}
 
-*The Pheras (Day 2, 2:00 AM – at Atlantis):*
+*The Pheras (Day 3, 2:00 AM – at InterContinental Jaipur):*
 ${WEDDING_INFO.ceremonies.pheras}
 
 ━━━━━━━━━━━━━━━━━━━━━━
