@@ -219,6 +219,8 @@ async function isAddressedToBot(message) {
   const myNumber = client.info?.wid?.user;
   const pushname = client.info?.pushname?.toLowerCase();
 
+  console.log(`[DEBUG] JID: ${myJid} | Number: ${myNumber} | Pushname: ${pushname} | Mentioned: ${JSON.stringify(message.mentionedIds || [])}`);
+
   // 1. WhatsApp native mentions JID check
   if (myJid && message.mentionedIds && message.mentionedIds.includes(myJid)) {
     return true;
