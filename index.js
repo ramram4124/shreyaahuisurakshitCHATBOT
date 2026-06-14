@@ -214,6 +214,68 @@ async function safeReact(message, emoji) {
   try { await message.react(emoji); } catch (_) { }
 }
 
+/**
+ * Checks if a message (especially in a group chat) is specifically addressed/asked to the bot.
+ */
+async function isAddressedToBot(message) {
+  const myJid = client.info?.wid?._serialized;
+  if (myJid && message.mentionedIds && message.mentionedIds.includes(myJid)) {
+    return true;
+  }
+
+  // Text triggers
+  const text = (message.body || '').trim().toLowerCase();
+  if (text.startsWith('/ask') || text.startsWith('chatbot') || text.startsWith('bot')) {
+    return true;
+  }
+
+  const myNumber = client.info?.wid?.user;
+  if (myNumber && text.includes(`@${myNumber}`)) {
+    return true;
+  }
+
+  // Reply to bot's message
+  if (message.hasQuotedMsg) {
+    try {
+      const quoted = await message.getQuotedMessage();
+      if (quoted && quoted.fromMe) {
+        return true;
+      }
+    } catch (_) {
+      // Ignore errors fetching quoted message
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Cleans the message text of mentions, triggers, and extra punctuation before processing.
+ */
+function cleanMessageBody(body, myNumber) {
+  if (!body) return '';
+  let cleanText = body;
+  if (myNumber) {
+    const mentionRegex = new RegExp(`@${myNumber}\\b`, 'gi');
+    cleanText = cleanText.replace(mentionRegex, '');
+  }
+  cleanText = cleanText.trim();
+
+  // Strip prefixes case-insensitively
+  const lower = cleanText.toLowerCase();
+  if (lower.startsWith('/ask')) {
+    cleanText = cleanText.slice(4).trim();
+  } else if (lower.startsWith('chatbot')) {
+    cleanText = cleanText.slice(7).trim();
+  } else if (lower.startsWith('bot')) {
+    cleanText = cleanText.slice(3).trim();
+  }
+
+  // Remove leading colons, commas, or spaces left from trimming prefixes (e.g. "chatbot: hello" -> "hello")
+  cleanText = cleanText.replace(/^[:,\s]+/, '');
+  return cleanText.trim();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN COMMAND HANDLER
 //
@@ -334,7 +396,10 @@ async function handleText(message, userId, text) {
     const chat = await message.getChat();
     await chat.sendStateTyping();
 
-    const reply = await askOpenAI(userId, text);
+    const myNumber = client.info?.wid?.user;
+    const cleanedText = cleanMessageBody(text, myNumber);
+
+    const reply = await askOpenAI(userId, cleanedText);
     await message.reply(reply);
     await safeReact(message, '✅');
     console.log(`📤  [${userId}] Text reply sent.`);
@@ -374,7 +439,9 @@ async function handleVoiceNote(message, userId) {
     }
 
     // 3. GPT reply
-    const reply = await askOpenAI(userId, transcribed);
+    const myNumber = client.info?.wid?.user;
+    const cleanedTranscribed = cleanMessageBody(transcribed, myNumber);
+    const reply = await askOpenAI(userId, cleanedTranscribed);
     console.log(`🤖  [${userId}] GPT replied. Converting to voice...`);
 
     // 4. Text → OGG Opus voice note (OpenAI TTS)
@@ -495,26 +562,32 @@ client.on('disconnected',  (reason) => console.warn('⚠️   Bot disconnected:'
 // ─────────────────────────────────────────────────────────────────────────────
 
 client.on('message', async (message) => {
-  if (message.isGroupMsg)               return;
   if (message.from === 'status@broadcast') return;
   if (!botReadyAt)                      return;
 
   const msgTimeMs = (message.timestamp || 0) * 1000;
   if (msgTimeMs < botReadyAt)           return;
 
-  const userId  = message.from;
+  // ── Group Message Filter ──────────────────────────────────────────────────
+  if (message.isGroupMsg) {
+    const addressed = await isAddressedToBot(message);
+    if (!addressed) return;
+  }
+
+  const chatId  = message.from;
+  const senderId = message.author || message.from;
   const msgType = message.type;
 
-  // ── Register / update user ────────────────────────────────────────────────
+  // ── Register / update user (register the actual sender) ────────────────────
   let contactName = '';
   try {
     const contact = await message.getContact();
     contactName   = contact.pushname || contact.name || '';
   } catch (_) { }
-  store.touchUser(userId, contactName);
+  store.touchUser(senderId, contactName);
 
-  // ── Admin commands (only for configured admin number) ─────────────────────
-  if (ADMIN_JID && userId === ADMIN_JID && msgType === 'chat') {
+  // ── Admin commands (only for configured admin number in private chat) ─────
+  if (ADMIN_JID && senderId === ADMIN_JID && !message.isGroupMsg && msgType === 'chat') {
     const text = (message.body || '').trim();
     if (text.startsWith('/')) {
       const handled = await handleAdminCommand(message, text);
@@ -522,9 +595,9 @@ client.on('message', async (message) => {
     }
   }
 
-  // ── Rate limit check ──────────────────────────────────────────────────────
-  if (isRateLimited(userId)) {
-    console.warn(`🚫  [${userId}] Rate limited`);
+  // ── Rate limit check (apply per-sender) ───────────────────────────────────
+  if (isRateLimited(senderId)) {
+    console.warn(`🚫  [${senderId}] Rate limited`);
     await safeReply(
       message,
       "You're sending messages very quickly! 😅 Please wait a moment before trying again. 🙏"
@@ -539,14 +612,14 @@ client.on('message', async (message) => {
   }
 
   if (msgType === 'ptt' || msgType === 'audio') {
-    await handleVoiceNote(message, userId);
+    await handleVoiceNote(message, chatId);
     return;
   }
 
   if (msgType === 'chat') {
     const text = (message.body || '').trim();
     if (!text) return;
-    await handleText(message, userId, text);
+    await handleText(message, chatId, text);
     return;
   }
 
