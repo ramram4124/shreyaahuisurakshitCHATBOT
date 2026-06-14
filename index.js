@@ -568,8 +568,10 @@ client.on('message', async (message) => {
   const msgTimeMs = (message.timestamp || 0) * 1000;
   if (msgTimeMs < botReadyAt)           return;
 
+  const isGroup = message.from.endsWith('@g.us');
+
   // ── Group Message Filter ──────────────────────────────────────────────────
-  if (message.isGroupMsg) {
+  if (isGroup) {
     const addressed = await isAddressedToBot(message);
     if (!addressed) return;
   }
@@ -587,7 +589,7 @@ client.on('message', async (message) => {
   store.touchUser(senderId, contactName);
 
   // ── Admin commands (only for configured admin number in private chat) ─────
-  if (ADMIN_JID && senderId === ADMIN_JID && !message.isGroupMsg && msgType === 'chat') {
+  if (ADMIN_JID && senderId === ADMIN_JID && !isGroup && msgType === 'chat') {
     const text = (message.body || '').trim();
     if (text.startsWith('/')) {
       const handled = await handleAdminCommand(message, text);
