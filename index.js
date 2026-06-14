@@ -214,27 +214,58 @@ async function safeReact(message, emoji) {
   try { await message.react(emoji); } catch (_) { }
 }
 
-/**
- * Checks if a message (especially in a group chat) is specifically addressed/asked to the bot.
- */
 async function isAddressedToBot(message) {
   const myJid = client.info?.wid?._serialized;
+  const myNumber = client.info?.wid?.user;
+  const pushname = client.info?.pushname?.toLowerCase();
+
+  // 1. WhatsApp native mentions JID check
   if (myJid && message.mentionedIds && message.mentionedIds.includes(myJid)) {
     return true;
   }
 
-  // Text triggers
+  // 2. Also check if any mentioned JID contains the bot's number
+  if (myNumber && message.mentionedIds) {
+    for (const jid of message.mentionedIds) {
+      if (jid.includes(myNumber)) {
+        return true;
+      }
+    }
+  }
+
+  // 3. Text triggers
   const text = (message.body || '').trim().toLowerCase();
-  if (text.startsWith('/ask') || text.startsWith('chatbot') || text.startsWith('bot')) {
+  
+  // Normalise text by removing leading '@' and punctuation
+  const cleanStartText = text.replace(/^[@:,\s]+/, '');
+  if (cleanStartText.startsWith('/ask') || cleanStartText.startsWith('chatbot') || cleanStartText.startsWith('bot')) {
     return true;
   }
 
-  const myNumber = client.info?.wid?.user;
+  // Check for text-based mentions of the bot's number or pushname
   if (myNumber && text.includes(`@${myNumber}`)) {
     return true;
   }
+  if (pushname && text.includes(`@${pushname}`)) {
+    return true;
+  }
 
-  // Reply to bot's message
+  // Also check if they mentioned parts of the pushname (e.g. "@snigdha" if pushname is "Snigdha (Shreyaa)")
+  if (pushname) {
+    const parts = pushname.split(/[^a-z0-9]/).filter(p => p.length > 2);
+    for (const part of parts) {
+      if (text.includes(`@${part}`)) {
+        return true;
+      }
+    }
+  }
+
+  // Check if they just type "@bot" or "@chatbot" anywhere in the text
+  if (text.includes('@bot') || text.includes('@chatbot')) {
+    return true;
+  }
+
+  // 4. Reply to bot's message
   if (message.hasQuotedMsg) {
     try {
       const quoted = await message.getQuotedMessage();
@@ -252,16 +283,37 @@ async function isAddressedToBot(message) {
 /**
  * Cleans the message text of mentions, triggers, and extra punctuation before processing.
  */
-function cleanMessageBody(body, myNumber) {
+function cleanMessageBody(body, myNumber, pushname) {
   if (!body) return '';
   let cleanText = body;
+  
+  // 1. Strip JID number mention
   if (myNumber) {
     const mentionRegex = new RegExp(`@${myNumber}\\b`, 'gi');
     cleanText = cleanText.replace(mentionRegex, '');
   }
+
+  // 2. Strip pushname mentions
+  if (pushname) {
+    const cleanPushname = pushname.trim().toLowerCase();
+    const pushRegex = new RegExp(`@${escapeRegExp(cleanPushname)}\\b`, 'gi');
+    cleanText = cleanText.replace(pushRegex, '');
+
+    // Strip parts of pushname (like "@snigdha")
+    const parts = cleanPushname.split(/[^a-z0-9]/).filter(p => p.length > 2);
+    for (const part of parts) {
+      const partRegex = new RegExp(`@${escapeRegExp(part)}\\b`, 'gi');
+      cleanText = cleanText.replace(partRegex, '');
+    }
+  }
+
+  // 3. Strip @bot and @chatbot
+  cleanText = cleanText.replace(/@chatbot\b/gi, '');
+  cleanText = cleanText.replace(/@bot\b/gi, '');
+
   cleanText = cleanText.trim();
 
-  // Strip prefixes case-insensitively
+  // 4. Strip command prefixes
   const lower = cleanText.toLowerCase();
   if (lower.startsWith('/ask')) {
     cleanText = cleanText.slice(4).trim();
@@ -271,10 +323,16 @@ function cleanMessageBody(body, myNumber) {
     cleanText = cleanText.slice(3).trim();
   }
 
-  // Remove leading colons, commas, or spaces left from trimming prefixes (e.g. "chatbot: hello" -> "hello")
+  // Remove leading colons, commas, or spaces left from trimming prefixes
   cleanText = cleanText.replace(/^[:,\s]+/, '');
   return cleanText.trim();
 }
+
+/** Helper to escape regex special characters */
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN COMMAND HANDLER
@@ -397,7 +455,8 @@ async function handleText(message, userId, text) {
     await chat.sendStateTyping();
 
     const myNumber = client.info?.wid?.user;
-    const cleanedText = cleanMessageBody(text, myNumber);
+    const pushname = client.info?.pushname;
+    const cleanedText = cleanMessageBody(text, myNumber, pushname);
 
     const reply = await askOpenAI(userId, cleanedText);
     await message.reply(reply);
@@ -440,7 +499,8 @@ async function handleVoiceNote(message, userId) {
 
     // 3. GPT reply
     const myNumber = client.info?.wid?.user;
-    const cleanedTranscribed = cleanMessageBody(transcribed, myNumber);
+    const pushname = client.info?.pushname;
+    const cleanedTranscribed = cleanMessageBody(transcribed, myNumber, pushname);
     const reply = await askOpenAI(userId, cleanedTranscribed);
     console.log(`🤖  [${userId}] GPT replied. Converting to voice...`);
 
@@ -573,7 +633,10 @@ client.on('message', async (message) => {
   // ── Group Message Filter ──────────────────────────────────────────────────
   if (isGroup) {
     const addressed = await isAddressedToBot(message);
-    if (!addressed) return;
+    if (!addressed) {
+      console.log(`🔇  [${message.from}] (group) Ignored message: "${(message.body || '').slice(0, 60)}"`);
+      return;
+    }
   }
 
   const chatId  = message.from;
