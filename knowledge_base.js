@@ -43,19 +43,19 @@ const WEDDING_INFO = {
   // ── Full Itinerary ──────────────────────────────────────────────────────────
   itinerary: {
     day1: [
-      { time: '01:00 PM', event: 'Welcome Lunch & Mayera',   venue: 'InterContinental Jaipur, Sitapura' },
-      { time: '01:00 PM', event: 'Welcome Lunch & Reetein', venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '01:00 PM', event: 'Welcome Lunch & Mayera (Groom Side)',   venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '01:00 PM', event: 'Welcome Lunch & Reetein (Bride Side)', venue: 'InterContinental Jaipur, Sitapura' },
       { time: '08:00 PM', event: 'Sangeet',                  venue: 'Convergence Ballroom, InterContinental' },
     ],
     day2: [
-      { time: '10:00 AM', event: 'Chooda Ceremony',                venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '10:00 AM', event: 'Chooda Ceremony (Bride Side)',                venue: 'InterContinental Jaipur, Sitapura' },
       { time: '11:00 AM', event: 'Gidda & Gossip',                 venue: 'Convergence Ballroom, InterContinental', theme: 'High Beats & Punjabi Carnival – come dressed for dhol, gidda, and Punjabi masti.' },
       { time: '06:30 PM', event: 'Sehra Bandi & Baraat Assembly', venue: 'InterContinental Jaipur, Sitapura' },
       { time: '08:00 PM', event: 'Baraat Welcome',                 venue: 'Atlantis, Sitapura' },
       { time: '08:30 PM', event: 'Varmala • Reception',            venue: 'Atlantis, Sitapura', note: 'Dinner will be ongoing throughout the evening.' },
     ],
     day3: [
-      { time: '02:00 AM', event: 'The Pheras', venue: 'InterContinental Jaipur, Sitapura' },
+      { time: '02:00 AM', event: 'The Pheras', venue: 'Atlantis, Sitapura' },
       { time: '08:00 AM', event: 'Breakfast',  venue: 'InterContinental Jaipur, Sitapura' },
     ],
   },
@@ -63,7 +63,7 @@ const WEDDING_INFO = {
   // ── Wardrobe Guide per Event ────────────────────────────────────────────────
   wardrobe: [
     {
-      event:   'Welcome Lunch & Mayera (01:00 PM, Sunday, 5th July 2026)',
+      event:   'Welcome Lunch & Mayera (Groom Side) (01:00 PM, Sunday, 5th July 2026)',
       vibe:    'Warm Welcome & Sacred Rituals',
       general: 'Bring your brightest smiles and festive style.',
       women:   'Vibrant ethnic wear (suits, lehengas, or sarees in bright colors).',
@@ -71,7 +71,7 @@ const WEDDING_INFO = {
       tip:     'This is the first event, so dress bright, happy, and ready to kick off the celebrations! 🌸',
     },
     {
-      event:   'Welcome Lunch & Reetein (01:00 PM, Sunday, 5th July 2026)',
+      event:   'Welcome Lunch & Reetein (Bride Side) (01:00 PM, Sunday, 5th July 2026)',
       vibe:    'Warm Welcome & Sacred Rituals',
       general: 'Dress for a beautiful afternoon of traditions and blessings.',
       women:   'Beautiful traditional suits, light lehengas, or sarees.',
@@ -87,7 +87,7 @@ const WEDDING_INFO = {
       tip:     'Make sure you wear comfortable footwear – the dance floor will be busy! 💃🕺',
     },
     {
-      event:   'Chooda Ceremony (10:00 AM, Monday, 6th July 2026)',
+      event:   'Chooda Ceremony (Bride Side) (10:00 AM, Monday, 6th July 2026)',
       vibe:    'The Bride’s Sacred Adornment Ceremony',
       general: 'Dress with grace for a morning of love and blessings.',
       women:   'Graceful morning ethnic wear or light suits.',
@@ -132,7 +132,7 @@ const WEDDING_INFO = {
       general: 'Traditional Sacred Attire',
       women:   'Traditional sarees, lehengas, or heavy ethnic wear.',
       men:     'Sherwanis, dhoti-kurtas, or traditional kurta sets.',
-      tip:     'It is late night/early morning and can get chilly at InterContinental Jaipur, so carrying a light shawl is highly recommended! 🧣',
+      tip:     'It is late night/early morning and can get chilly at Atlantis, Sitapura, so carrying a light shawl is highly recommended! 🧣',
     },
     {
       event:   'Breakfast (08:00 AM, Tuesday, 7th July 2026)',
@@ -192,7 +192,7 @@ const WEDDING_INFO = {
     mayera:  'Surakshit\'s maternal uncles (mamas) and family arrive with gifts, clothes, and blessings for the groom and his mother. A heartwarming ritual that celebrates the love and support of the maternal side of the family.',
     reetein: 'Traditional pre-wedding rituals for Shreyaa and her family – soulful customs and blessings to prepare the bride for her new journey. Expect traditional songs, deep family bonding, and emotional moments. Dress code: Traditional Indian wear.',
     choora:  'One of the most significant moments for Shreyaa! Her maternal uncles (mamas) gift her red and white bangles (the Choora), purified in milk and rose petals – very auspicious and emotional. Starting at 10:00 AM, so grab a quick tea or coffee from The Lounge before heading in! Dress: Traditional morning wear, comfortable for the Gidda & Gossip that follows.',
-    pheras:  'The sacred fire ceremony where Shreyaa and Surakshit take their vows. Starts at 2:00 AM at InterContinental Jaipur, Sitapura (indoors) and takes approximately 2 hours. The most sacred part of the wedding, but not mandatory for all guests – elders and little ones who need to retire early are completely understood. Give blessings during Varmala or Dinner earlier in the evening. Jaipur nights can be chilly, so carry a light shawl!',
+    pheras:  'The sacred fire ceremony where Shreyaa and Surakshit take their vows. Starts at 2:00 AM at Atlantis, Sitapura and takes approximately 2 hours. The most sacred part of the wedding, but not mandatory for all guests – elders and little ones who need to retire early are completely understood. Give blessings during Varmala or Dinner earlier in the evening. Jaipur nights can be chilly, so carry a light shawl!',
   },
 
   // ── Baraat Details ───────────────────────────────────────────────────────────
@@ -242,6 +242,17 @@ const WEDDING_INFO = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildSystemPrompt() {
+  const currentDateTimeIST = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }).format(new Date());
 
   // Build Day 1 itinerary text
   const day1Text = WEDDING_INFO.itinerary.day1
@@ -280,6 +291,8 @@ function buildSystemPrompt() {
     .join('\n');
 
   return `You are the official digital concierge for ${WEDDING_INFO.couple.groom} and ${WEDDING_INFO.couple.bride}'s wedding. Your name is *SuSh* 💍 (short for Surakshit & Shreyaa).
+
+Current Date and Time: *${currentDateTimeIST} (IST)*. (Use this as the absolute source of truth for the current time. Do not make up any other date or assume a different year/month/day).
 
 Your personality is warm, enthusiastic, and respectful – like that one well-informed family member who knows everything about the wedding and loves helping guests. You are chatting with guests on *WhatsApp*.
 
@@ -404,7 +417,7 @@ ${WEDDING_INFO.ceremonies.reetein}
 *Choora Ceremony (Day 2, 10:00 AM):*
 ${WEDDING_INFO.ceremonies.choora}
 
-*The Pheras (Day 3, 2:00 AM – at InterContinental Jaipur):*
+*The Pheras (Day 3, 2:00 AM – at Atlantis, Sitapura):*
 ${WEDDING_INFO.ceremonies.pheras}
 
 ━━━━━━━━━━━━━━━━━━━━━━

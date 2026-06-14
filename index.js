@@ -30,7 +30,7 @@ if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_a
 // ─────────────────────────────────────────────────────────────────────────────
 
 const openai        = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const SYSTEM_PROMPT = buildSystemPrompt();
+// System prompt is generated dynamically per request to ensure correct current date/time
 const MODEL         = 'gpt-4o-mini';
 
 const FALLBACK_MSG =
@@ -154,7 +154,7 @@ const SEARCH_ENABLED =
 
 async function askOpenAI(userId, userMessage) {
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: buildSystemPrompt() },
     ...store.getHistory(userId),
     { role: 'user', content: userMessage },
   ];
