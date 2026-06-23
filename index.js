@@ -853,5 +853,17 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 console.log('   Initialising WhatsApp client...\n');
 
 migrateSessionToVolume();
+
+if (process.env.RESET_SESSION === 'true') {
+  try {
+    if (fs.existsSync(AUTH_PATH)) {
+      fs.rmSync(AUTH_PATH, { recursive: true, force: true });
+      console.log(`🧹 Wiped session directory due to RESET_SESSION flag: ${AUTH_PATH}`);
+    }
+  } catch (err) {
+    console.error('❌ Failed to wipe session directory:', err.message);
+  }
+}
+
 clearChromiumLocks();
 client.initialize();
