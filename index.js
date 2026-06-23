@@ -104,6 +104,42 @@ const TOOLS = [
   {
     type: 'function',
     function: {
+      name: 'send_dress_code_images',
+      description:
+        'Send wedding wardrobe/dress-code inspiration images to the guest on WhatsApp. ' +
+        'Use this tool whenever a guest asks what they should wear, asks for dress code details, or asks for picture/inspiration examples for any specific event.',
+      parameters: {
+        type: 'object',
+        properties: {
+          event_key: {
+            type: 'string',
+            enum: ['mayera', 'reetein', 'sangeet', 'chooda', 'gidda', 'baraat', 'reception', 'pheras'],
+            description:
+              'The specific wedding event to send outfit images for: ' +
+              '"mayera" (Welcome Lunch & Mayera), ' +
+              '"reetein" (Welcome Lunch & Reetein), ' +
+              '"sangeet" (Sangeet), ' +
+              '"chooda" (Chooda Ceremony), ' +
+              '"gidda" (Gidda & Gossip / Punjabi Carnival), ' +
+              '"baraat" (Baraat Assembly & Procession), ' +
+              '"reception" (Varmala & Reception), ' +
+              '"pheras" (The Pheras).'
+          },
+        },
+        required: ['event_key'],
+      },
+    },
+  },
+];
+
+const SEARCH_ENABLED =
+  !!process.env.SERPER_API_KEY &&
+  process.env.SERPER_API_KEY !== 'your_serper_key_here';
+
+if (SEARCH_ENABLED) {
+  TOOLS.push({
+    type: 'function',
+    function: {
       name: 'web_search',
       description:
         'Search Google for real-time information NOT available in the wedding knowledge base. ' +
@@ -141,12 +177,8 @@ const TOOLS = [
         required: ['query'],
       },
     },
-  },
-];
-
-const SEARCH_ENABLED =
-  !!process.env.SERPER_API_KEY &&
-  process.env.SERPER_API_KEY !== 'your_serper_key_here';
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OPENAI QUERY  (with function-calling loop)
@@ -162,8 +194,8 @@ async function askOpenAI(userId, userMessage) {
   let response = await openai.chat.completions.create({
     model: MODEL,
     messages,
-    tools:       SEARCH_ENABLED ? TOOLS     : undefined,
-    tool_choice: SEARCH_ENABLED ? 'auto'    : undefined,
+    tools:       TOOLS.length > 0 ? TOOLS : undefined,
+    tool_choice: TOOLS.length > 0 ? 'auto' : undefined,
     temperature: 0.5,
     max_tokens:  700,
   });
@@ -186,6 +218,43 @@ async function askOpenAI(userId, userMessage) {
         } catch (err) {
           result = `Search unavailable: ${err.message}`;
           console.warn(`⚠️   [${userId}] Search failed: ${err.message}`);
+        }
+
+        messages.push({ role: 'tool', tool_call_id: call.id, content: result });
+      } else if (call.function.name === 'send_dress_code_images') {
+        const { event_key } = JSON.parse(call.function.arguments);
+        console.log(`🖼️  [${userId}] Requested wardrobe image for event_key: "${event_key}"`);
+
+        const eventNames = {
+          mayera: 'Welcome Lunch & Mayera',
+          reetein: 'Welcome Lunch & Reetein',
+          sangeet: 'Sangeet Night',
+          chooda: 'Chooda Ceremony',
+          gidda: 'Gidda & Gossip / Punjabi Carnival',
+          baraat: 'Baraat Assembly & Procession',
+          reception: 'Varmala • Reception',
+          pheras: 'The Pheras'
+        };
+
+        let result;
+        try {
+          const imgPath = path.join(__dirname, 'wardrobe_images', `${event_key}.png`);
+          if (fs.existsSync(imgPath)) {
+            const media = new MessageMedia(
+              'image/png',
+              fs.readFileSync(imgPath).toString('base64'),
+              `${event_key}.png`
+            );
+            await client.sendMessage(userId, media, { caption: `*SuSh* 💍 | Outfit inspiration for *${eventNames[event_key] || event_key}*` });
+            console.log(`✅  [${userId}] Sent wardrobe image successfully.`);
+            result = JSON.stringify({ success: true, message: `Image for ${event_key} has been successfully sent to the guest.` });
+          } else {
+            console.warn(`⚠️   [${userId}] Image not found at path: ${imgPath}`);
+            result = JSON.stringify({ success: false, message: `Image for event key ${event_key} is not available on disk.` });
+          }
+        } catch (err) {
+          result = JSON.stringify({ success: false, error: err.message });
+          console.error(`❌  [${userId}] Failed to send wardrobe image:`, err.message);
         }
 
         messages.push({ role: 'tool', tool_call_id: call.id, content: result });
