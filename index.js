@@ -778,7 +778,7 @@ const PORT = process.env.PORT || 3000;
 const httpServer = http.createServer((req, res) => {
   if (req.url === '/health') {
     const isReady = botReadyAt !== null;
-    res.writeHead(isReady ? 200 : 503, { 'Content-Type': 'application/json' });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       status:     isReady ? 'ready' : 'initialising',
       uptime:     isReady ? Math.round((Date.now() - botReadyAt) / 1000) + 's' : null,
