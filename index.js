@@ -821,6 +821,34 @@ function migrateSessionToVolume() {
   }
 }
 
+function clearChromiumLocks(dir) {
+  if (!fs.existsSync(dir)) return;
+  try {
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      let stat;
+      try {
+        stat = fs.lstatSync(filePath); // Use lstat to handle symlinks safely
+      } catch (_) {
+        continue;
+      }
+      if (stat.isDirectory()) {
+        clearChromiumLocks(filePath);
+      } else if (file === 'SingletonLock' || file.includes('Singleton')) {
+        try {
+          fs.unlinkSync(filePath);
+          console.log(`🧹 Deleted stale Chromium lock file: ${filePath}`);
+        } catch (err) {
+          console.warn(`⚠️  Failed to delete lock file ${filePath}:`, err.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`⚠️  Failed to read directory ${dir} for locks:`, err.message);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────────────────────────
@@ -830,4 +858,5 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 console.log('   Initialising WhatsApp client...\n');
 
 migrateSessionToVolume();
+clearChromiumLocks(AUTH_PATH);
 client.initialize();
