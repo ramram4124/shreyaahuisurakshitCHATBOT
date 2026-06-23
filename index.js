@@ -821,31 +821,25 @@ function migrateSessionToVolume() {
   }
 }
 
-function clearChromiumLocks(dir) {
-  if (!fs.existsSync(dir)) return;
-  try {
-    const files = fs.readdirSync(dir);
-    for (const file of files) {
-      const filePath = path.join(dir, file);
-      let stat;
+function clearChromiumLocks() {
+  const lockFiles = [
+    path.join(AUTH_PATH, 'SingletonLock'),
+    path.join(AUTH_PATH, 'SingletonCookie'),
+    path.join(AUTH_PATH, 'SingletonSocket'),
+    path.join(AUTH_PATH, 'Default', 'SingletonLock'),
+    path.join(AUTH_PATH, 'Default', 'SingletonCookie'),
+    path.join(AUTH_PATH, 'Default', 'SingletonSocket'),
+  ];
+
+  for (const file of lockFiles) {
+    if (fs.existsSync(file)) {
       try {
-        stat = fs.lstatSync(filePath); // Use lstat to handle symlinks safely
-      } catch (_) {
-        continue;
-      }
-      if (stat.isDirectory()) {
-        clearChromiumLocks(filePath);
-      } else if (file === 'SingletonLock' || file.includes('Singleton')) {
-        try {
-          fs.unlinkSync(filePath);
-          console.log(`🧹 Deleted stale Chromium lock file: ${filePath}`);
-        } catch (err) {
-          console.warn(`⚠️  Failed to delete lock file ${filePath}:`, err.message);
-        }
+        fs.unlinkSync(file);
+        console.log(`🧹 Deleted stale Chromium lock file: ${file}`);
+      } catch (err) {
+        console.warn(`⚠️  Failed to delete lock file ${file}:`, err.message);
       }
     }
-  } catch (err) {
-    console.warn(`⚠️  Failed to read directory ${dir} for locks:`, err.message);
   }
 }
 
@@ -858,5 +852,5 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 console.log('   Initialising WhatsApp client...\n');
 
 migrateSessionToVolume();
-clearChromiumLocks(AUTH_PATH);
+clearChromiumLocks();
 client.initialize();
