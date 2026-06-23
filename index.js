@@ -1,7 +1,8 @@
 'use strict';
 
 require('dotenv').config();
-process.env.DEBUG = 'puppeteer:*';
+// process.env.DEBUG = 'puppeteer:*';
+
 
 const fs   = require('fs');
 const http = require('http');
