@@ -685,6 +685,14 @@ client.on('ready', () => {
   console.log(`🔒  Admin        : ${ADMIN_JID || 'not configured (set ADMIN_NUMBER in .env)'}`);
   console.log(`🔍  Web search   : ${SEARCH_ENABLED ? 'enabled (Serper)' : 'disabled'}`);
   console.log('💬  Waiting for messages...\n');
+
+  // Delete the QR file once ready to avoid serving an expired code
+  if (fs.existsSync(QR_FILE)) {
+    try {
+      fs.unlinkSync(QR_FILE);
+      console.log('🧹 Cleaned up qr-auth.png after successful authentication.');
+    } catch (_) {}
+  }
 });
 
 client.on('auth_failure', (msg) => console.error('❌  Authentication failed:', msg));
@@ -789,6 +797,14 @@ const httpServer = http.createServer((req, res) => {
       model:      MODEL,
       search:     SEARCH_ENABLED,
     }));
+  } else if (req.url === '/qr') {
+    if (fs.existsSync(QR_FILE)) {
+      res.writeHead(200, { 'Content-Type': 'image/png' });
+      res.end(fs.readFileSync(QR_FILE));
+    } else {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('<h3>No active QR code found. The bot might already be connected or initializing.</h3>');
+    }
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('SuSh Wedding Bot 💍');
