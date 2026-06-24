@@ -247,7 +247,7 @@ async function askOpenAI(userId, userMessage) {
               fs.readFileSync(imgPath).toString('base64'),
               `${event_key}.png`
             );
-            await client.sendMessage(userId, media, { caption: `*SuSh* 💍 | Outfit inspiration for *${eventNames[event_key] || event_key}*` });
+            await client.sendMessage(userId, media, { caption: `*#ShreyaaHuiSurakshit* 💍 | Outfit inspiration for *${eventNames[event_key] || event_key}*` });
             console.log(`✅  [${userId}] Sent wardrobe image successfully.`);
             result = JSON.stringify({ success: true, message: `Image for ${event_key} has been successfully sent to the guest.` });
           } else {
@@ -442,7 +442,7 @@ async function handleAdminCommand(message, text) {
 
     await safeReply(
       message,
-      `📊 *SuSh Bot Stats*\n\n` +
+      `📊 *#ShreyaaHuiSurakshit Bot Stats*\n\n` +
       `👥 Unique guests: *${s.totalUsers}*\n` +
       `💬 Total messages: *${s.totalMessages}*\n\n` +
       `*Top 5 active guests:*\n${top}`
@@ -807,7 +807,7 @@ const httpServer = http.createServer((req, res) => {
     }
   } else {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('SuSh Wedding Bot 💍');
+    res.end('#ShreyaaHuiSurakshit Wedding Bot 💍');
   }
 });
 
